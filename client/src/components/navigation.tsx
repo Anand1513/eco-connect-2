@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { Link } from "wouter";
 
 export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -47,12 +48,14 @@ export default function Navigation() {
             ))}
           </div>
           
-          <button 
-            className="hidden md:inline-flex items-center px-6 py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-all hover:scale-105 shadow-lg"
-            data-testid="join-us-button"
-          >
-            Join Us
-          </button>
+          <Link href="/auth">
+            <button 
+              className="hidden md:inline-flex items-center px-6 py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-all hover:scale-105 shadow-lg"
+              data-testid="join-us-button"
+            >
+              Join Us
+            </button>
+          </Link>
           
           {/* Mobile Menu Button */}
           <button 
@@ -79,12 +82,14 @@ export default function Navigation() {
                 {item.label}
               </button>
             ))}
-            <button 
-              className="w-full mt-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold"
-              data-testid="mobile-join-us-button"
-            >
-              Join Us
-            </button>
+            <Link href="/auth">
+              <button 
+                className="w-full mt-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold"
+                data-testid="mobile-join-us-button"
+              >
+                Join Us
+              </button>
+            </Link>
           </div>
         </div>
       )}

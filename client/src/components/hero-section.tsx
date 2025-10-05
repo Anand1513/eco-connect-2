@@ -1,3 +1,5 @@
+import { Link } from "wouter";
+
 export default function HeroSection() {
   const scrollToAbout = () => {
     const element = document.getElementById('about');
@@ -32,12 +34,14 @@ export default function HeroSection() {
             EcoConnect bridges restaurants and NGOs to redistribute surplus food responsibly, creating a sustainable future for all.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <button 
-              className="px-8 py-4 bg-primary text-primary-foreground rounded-lg font-semibold text-lg hover:bg-primary/90 transition-all hover:scale-105 shadow-xl"
-              data-testid="join-us-today-button"
-            >
-              Join Us Today
-            </button>
+            <Link href="/auth">
+              <button 
+                className="px-8 py-4 bg-primary text-primary-foreground rounded-lg font-semibold text-lg hover:bg-primary/90 transition-all hover:scale-105 shadow-xl"
+                data-testid="join-us-today-button"
+              >
+                Join Us Today
+              </button>
+            </Link>
             <button 
               onClick={scrollToAbout}
               className="px-8 py-4 bg-white/10 backdrop-blur-sm text-white border-2 border-white/30 rounded-lg font-semibold text-lg hover:bg-white/20 transition-all hover:scale-105"

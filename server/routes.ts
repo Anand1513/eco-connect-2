@@ -1,10 +1,12 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertContactSchema } from "@shared/schema";
+import { insertContactSchema, insertFoodListingSchema, insertFoodClaimSchema } from "@shared/schema";
+import { setupAuth } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Contact form submission endpoint
+  setupAuth(app);
+
   app.post("/api/contact", async (req, res) => {
     try {
       const validatedData = insertContactSchema.parse(req.body);
@@ -31,6 +33,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error: error instanceof Error ? error.message : "Unknown error",
       });
     }
+  });
+
+  app.post("/api/food-listings", async (req, res) => {
+    if (!req.isAuthenticated() || req.user?.role !== 'restaurant') {
+      return res.status(403).send("Only restaurants can create food listings");
+    }
+    
+    try {
+      const validatedData = insertFoodListingSchema.parse({
+        ...req.body,
+        restaurantId: req.user.id,
+      });
+      const listing = await storage.createFoodListing(validatedData);
+      res.status(201).json(listing);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.get("/api/food-listings", async (req, res) => {
+    const status = req.query.status as string | undefined;
+    const listings = await storage.getFoodListings(status);
+    res.json(listings);
+  });
+
+  app.get("/api/food-listings/my", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not authenticated");
+    }
+    
+    const listings = await storage.getFoodListingsByRestaurant(req.user.id);
+    res.json(listings);
+  });
+
+  app.post("/api/food-claims", async (req, res) => {
+    if (!req.isAuthenticated() || (req.user?.role !== 'volunteer' && req.user?.role !== 'ngo')) {
+      return res.status(403).send("Only volunteers and NGOs can claim food");
+    }
+    
+    try {
+      const validatedData = insertFoodClaimSchema.parse({
+        ...req.body,
+        claimedById: req.user.id,
+      });
+      
+      const listing = await storage.getFoodListing(validatedData.foodListingId);
+      if (!listing || listing.status !== 'available') {
+        return res.status(400).send("Food listing not available");
+      }
+      
+      const claim = await storage.createFoodClaim(validatedData);
+      await storage.updateFoodListingStatus(validatedData.foodListingId, 'claimed');
+      
+      res.status(201).json(claim);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.get("/api/food-claims/my", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not authenticated");
+    }
+    
+    const claims = await storage.getFoodClaimsByUser(req.user.id);
+    res.json(claims);
+  });
+
+  app.patch("/api/food-claims/:id/status", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not authenticated");
+    }
+    
+    try {
+      const { status } = req.body;
+      await storage.updateClaimStatus(req.params.id, status);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.get("/api/analytics", async (req, res) => {
+    const analytics = await storage.getAnalytics();
+    res.json(analytics);
   });
 
   const httpServer = createServer(app);

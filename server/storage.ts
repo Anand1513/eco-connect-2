@@ -15,11 +15,19 @@ import {
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { eq, and, desc } from "drizzle-orm";
+import session from "express-session";
+import connectPg from "connect-pg-simple";
+import { Pool } from "@neondatabase/serverless";
 
+const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
 const sql = neon(process.env.DATABASE_URL!);
 export const db = drizzle(sql);
 
+const PostgresSessionStore = connectPg(session);
+
 export interface IStorage {
+  sessionStore: session.SessionStore;
+  
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
@@ -46,6 +54,15 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  sessionStore: session.SessionStore;
+
+  constructor() {
+    this.sessionStore = new PostgresSessionStore({ 
+      pool: pool as any,
+      createTableIfMissing: true 
+    });
+  }
+
   async getUser(id: string): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
     return result[0];

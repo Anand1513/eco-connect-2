@@ -43,6 +43,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertFoodListingSchema.parse({
         ...req.body,
+        quantity: typeof req.body.quantity === 'string' ? parseInt(req.body.quantity, 10) : req.body.quantity,
+        pickupTimeStart: req.body.pickupTimeStart ? new Date(req.body.pickupTimeStart) : undefined,
+        pickupTimeEnd: req.body.pickupTimeEnd ? new Date(req.body.pickupTimeEnd) : undefined,
         restaurantId: req.user.id,
       });
       const listing = await storage.createFoodListing(validatedData);
@@ -118,6 +121,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/analytics", async (req, res) => {
     const analytics = await storage.getAnalytics();
     res.json(analytics);
+  });
+
+  // Public profiles (restaurants and NGOs)
+  app.get("/api/public/profiles", async (_req, res) => {
+    const restaurants = await storage.getUsersByRole?.("restaurant");
+    const ngos = await storage.getUsersByRole?.("ngo");
+    res.json({ restaurants: restaurants || [], ngos: ngos || [] });
+  });
+
+  // Reviews - in-memory fallback via storage when DB missing
+  app.get("/api/public/reviews", async (_req, res) => {
+    const reviews = await (storage as any).getReviews?.();
+    res.json(reviews || []);
+  });
+
+  app.post("/api/public/reviews", async (req, res) => {
+    try {
+      const saved = await (storage as any).addReview?.(req.body);
+      if (!saved) return res.status(501).send("Reviews not supported in current storage");
+      res.status(201).json(saved);
+    } catch (e) {
+      res.status(400).json({ error: e instanceof Error ? e.message : "Unknown error" });
+    }
   });
 
   const httpServer = createServer(app);

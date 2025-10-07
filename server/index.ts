@@ -1,4 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
+import helmet from "helmet";
+import cors from "cors";
+import rateLimit from "express-rate-limit";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
@@ -9,6 +12,32 @@ declare module 'http' {
     rawBody: unknown
   }
 }
+// Security headers
+app.use(helmet({
+  crossOriginOpenerPolicy: { policy: "same-origin" },
+  crossOriginResourcePolicy: { policy: "same-site" },
+  contentSecurityPolicy: false,
+}));
+
+// CORS configuration for API only
+const allowedOrigins = (process.env.CORS_ORIGINS || "").split(",").map(o => o.trim()).filter(Boolean);
+app.use("/api", cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    // Always allow localhost in development for any port
+    if (app.get("env") === "development" && /^https?:\/\/localhost(:\d+)?$/.test(origin)) {
+      return callback(null, true);
+    }
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+}));
+
+// Rate limiting for API endpoints
+const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 300 });
+app.use("/api", apiLimiter);
+
 app.use(express.json({
   verify: (req, _res, buf) => {
     req.rawBody = buf;

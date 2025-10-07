@@ -29,11 +29,20 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
+  const sessionSecret = process.env.SESSION_SECRET || "dev-session-secret-change-me";
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET!,
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
+    rolling: true,
+    cookie: {
+      httpOnly: true,
+      secure: app.get("env") === "production",
+      sameSite: "lax",
+      maxAge: 1000 * 60 * 60 * 4,
+      path: "/",
+    },
   };
 
   app.set("trust proxy", 1);

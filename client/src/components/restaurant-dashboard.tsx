@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertFoodListingSchema, type FoodListing } from "@shared/schema";
+import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -24,8 +25,16 @@ export default function RestaurantDashboard() {
     queryKey: ["/api/food-listings/my"],
   });
 
+  const formSchema = insertFoodListingSchema
+    .omit({ restaurantId: true })
+    .extend({
+      quantity: z.coerce.number().int().min(1),
+      pickupTimeStart: z.preprocess((v) => (typeof v === 'string' ? new Date(v) : v), z.date()),
+      pickupTimeEnd: z.preprocess((v) => (typeof v === 'string' ? new Date(v) : v), z.date()),
+    });
+
   const form = useForm({
-    resolver: zodResolver(insertFoodListingSchema.omit({ restaurantId: true })),
+    resolver: zodResolver(formSchema),
     defaultValues: {
       foodName: "",
       description: "",
@@ -62,7 +71,13 @@ export default function RestaurantDashboard() {
   });
 
   const onSubmit = (data: any) => {
-    createListingMutation.mutate(data);
+    const payload = {
+      ...data,
+      quantity: Number(data.quantity),
+      pickupTimeStart: data.pickupTimeStart ? new Date(data.pickupTimeStart) : undefined,
+      pickupTimeEnd: data.pickupTimeEnd ? new Date(data.pickupTimeEnd) : undefined,
+    };
+    createListingMutation.mutate(payload);
   };
 
   return (
@@ -183,7 +198,12 @@ export default function RestaurantDashboard() {
                       <FormItem>
                         <FormLabel>Pickup Start *</FormLabel>
                         <FormControl>
-                          <Input type="datetime-local" {...field} data-testid="pickup-start-input" />
+                          <Input
+                            type="datetime-local"
+                            value={typeof field.value === 'string' ? field.value : field.value ? new Date(field.value).toISOString().slice(0,16) : ''}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            data-testid="pickup-start-input"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -197,7 +217,12 @@ export default function RestaurantDashboard() {
                       <FormItem>
                         <FormLabel>Pickup End *</FormLabel>
                         <FormControl>
-                          <Input type="datetime-local" {...field} data-testid="pickup-end-input" />
+                          <Input
+                            type="datetime-local"
+                            value={typeof field.value === 'string' ? field.value : field.value ? new Date(field.value).toISOString().slice(0,16) : ''}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            data-testid="pickup-end-input"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

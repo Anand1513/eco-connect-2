@@ -3,8 +3,11 @@ import HeroSection from "@/components/hero-section";
 import AboutSection from "@/components/about-section";
 import HowItWorksSection from "@/components/how-it-works-section";
 import FeaturesSection from "@/components/features-section";
+import ExploreSection from "@/components/ExploreSection";
+import DonateSection from "@/components/DonateSection";
 import ContactSection from "@/components/contact-section";
 import Footer from "@/components/footer";
+import PublicProfiles from "@/pages/public-profiles";
 
 export default function Home() {
   return (
@@ -13,7 +16,10 @@ export default function Home() {
       <HeroSection />
       <AboutSection />
       <HowItWorksSection />
+      <ExploreSection />
+      <PublicProfiles />
       <FeaturesSection />
+      <DonateSection />
       <ContactSection />
       <Footer />
       

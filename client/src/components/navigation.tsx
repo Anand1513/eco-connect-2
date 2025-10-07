@@ -20,8 +20,10 @@ export default function Navigation() {
   const navigationItems = [
     { label: "Home", id: "home" },
     { label: "About", id: "about" },
+    { label: "Explore", id: "explore" },
     { label: "How It Works", id: "how-it-works" },
     { label: "Features", id: "features" },
+    { label: "Donate", id: "donate" },
     { label: "Contact", id: "contact" },
   ];
 

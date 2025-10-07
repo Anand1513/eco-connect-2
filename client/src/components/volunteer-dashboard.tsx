@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import FoodMap from "@/components/food-map";
 import { format } from "date-fns";
 import { MapPin, Clock } from "lucide-react";
 
@@ -72,6 +73,7 @@ export default function VolunteerDashboard() {
     <Tabs defaultValue="available" className="w-full">
       <TabsList>
         <TabsTrigger value="available">Available Food</TabsTrigger>
+        <TabsTrigger value="map">Map</TabsTrigger>
         <TabsTrigger value="my-claims">My Claims</TabsTrigger>
       </TabsList>
 
@@ -119,6 +121,21 @@ export default function VolunteerDashboard() {
             <Card>
               <CardContent className="py-12 text-center">
                 <p className="text-muted-foreground">No available food listings at the moment.</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </TabsContent>
+
+      <TabsContent value="map" className="mt-6">
+        <div className="space-y-4">
+          <h3 className="text-xl font-semibold">Pickup Locations Map</h3>
+          {availableListings && availableListings.length > 0 ? (
+            <FoodMap listings={availableListings} />
+          ) : (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <p className="text-muted-foreground">No available food listings to display on the map.</p>
               </CardContent>
             </Card>
           )}

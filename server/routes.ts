@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertContactSchema, insertFoodListingSchema, insertFoodClaimSchema } from "@shared/schema";
 import { setupAuth } from "./auth";
+import { supabase } from "./supabase";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
@@ -19,6 +20,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: contactSubmission.message,
         createdAt: contactSubmission.createdAt,
       });
+      // Attempt to mirror contact submissions to Supabase (if configured)
+      if (supabase) {
+        try {
+          await supabase
+            .from("contact_submissions")
+            .insert({
+              id: contactSubmission.id,
+              name: contactSubmission.name,
+              email: contactSubmission.email,
+              message: contactSubmission.message,
+              created_at: contactSubmission.createdAt?.toISOString?.() ?? new Date().toISOString(),
+            });
+        } catch (e) {
+          console.warn("Supabase insert (contact_submissions) failed:", (e as Error).message);
+        }
+      }
       
       res.status(201).json({
         success: true,

@@ -12,22 +12,24 @@ import {
   foodListings,
   foodClaims
 } from "@shared/schema";
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, and, desc } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import createMemoryStore from "memorystore";
-import { Pool } from "@neondatabase/serverless";
+import { Pool } from "pg";
 import { promisify } from "util";
 import { scrypt, randomBytes } from "crypto";
 
 const hasDatabase = Boolean(process.env.DATABASE_URL);
 
 // Only initialize DB clients if a DATABASE_URL exists
-const pool = hasDatabase ? new Pool({ connectionString: process.env.DATABASE_URL! }) : undefined as any;
-const sql = hasDatabase ? neon(process.env.DATABASE_URL!) : undefined as any;
-export const db = hasDatabase ? drizzle(sql) : undefined as any;
+// Supabase Postgres typically requires SSL; allow self-signed by default
+const pool = hasDatabase ? new Pool({
+  connectionString: process.env.DATABASE_URL!,
+  ssl: { rejectUnauthorized: false },
+}) : undefined as any;
+export const db = hasDatabase ? drizzle(pool) : undefined as any;
 
 const PostgresSessionStore = connectPg(session);
 const MemStore = createMemoryStore(session);
@@ -65,9 +67,9 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    this.sessionStore = new PostgresSessionStore({ 
+    this.sessionStore = new PostgresSessionStore({
       pool: pool as any,
-      createTableIfMissing: true 
+      createTableIfMissing: true,
     });
   }
 

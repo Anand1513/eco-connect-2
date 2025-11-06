@@ -1,0 +1,102 @@
+Prompt:
+
+Build a fully functional web prototype called EcoConnect, a platform that reduces food wastage in restaurants through community collaboration.
+
+🎯 Objective:
+
+Connect restaurants, NGOs, and volunteers to share surplus food safely and efficiently.
+
+🧱 Features and Pages:
+
+1. Homepage
+
+Hero section with heading: “Connecting Communities, Reducing Food Waste.”
+
+Subheading: “EcoConnect bridges restaurants and NGOs to redistribute surplus food responsibly.”
+
+Buttons: “Join Us” and “Learn More.”
+
+Background image related to sustainability or food donation.
+
+2. About Section
+
+Mission: To reduce food waste and feed communities.
+
+Story: How EcoConnect started as a community-driven initiative.
+
+Impact highlights (e.g., “Over 10,000 meals saved”).
+
+3. How It Works Section
+
+3-step process shown as icons or cards:
+1️⃣ Restaurants list surplus food.
+2️⃣ NGOs or volunteers get notified.
+3️⃣ Food collected and distributed.
+
+4. Features Section
+
+Cards with icons and short descriptions:
+
+“Real-time Food Tracking”
+
+“Restaurant Collaboration”
+
+“Volunteer Management”
+
+“Awareness & Campaigns”
+
+5. Contact Page
+
+Contact form with Name, Email, Message.
+
+Backend endpoint to handle submissions (/api/contact).
+
+Form integrated via EmailJS or FormSubmit.
+
+Social media icons and footer.
+
+6. Footer
+
+Copyright © EcoConnect 2025
+
+Quick navigation links and social media handles.
+
+🎨 Design Requirements:
+
+Use Tailwind CSS for responsive styling.
+
+Use JavaScript for animations and smooth scroll.
+
+Green and Orange theme (eco-friendly and energetic).
+
+Minimal and modern layout (grid/flexbox).
+
+Responsive on desktop and mobile.
+
+⚙️ Technical Requirements:
+
+Frontend: HTML, CSS, JS (TailwindCSS).
+
+Backend: Flask (Python) or Express.js (Node.js).
+
+API endpoint: /api/contact → logs form data to console.
+
+Use fetch() in JS to send POST request to backend.
+
+Deployment-ready on Replit.
+
+🧩 Output Files Expected:
+
+index.html
+
+style.css
+
+script.js
+
+app.py (Flask backend) or server.js (Node backend)
+
+README.md with setup instructions
+
+🚀 Final Goal:
+
+A clean, working prototype website that demonstrates a tech-driven, sustainable, community collaboration model for reducing food wastage in restaurants.

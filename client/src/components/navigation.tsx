@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
 
 export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user } = useAuth();
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -26,6 +28,7 @@ export default function Navigation() {
     { label: "Donate", id: "donate" },
     { label: "Contact", id: "contact" },
   ];
+  const extraItems = user ? [{ label: "Dashboard", href: "/dashboard" }] : [];
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border shadow-sm">
@@ -48,16 +51,23 @@ export default function Navigation() {
                 {item.label}
               </button>
             ))}
+            {extraItems.map((item) => (
+              <Link key={item.href} href={item.href}>
+                <a className="text-foreground hover:text-primary transition-colors font-medium" data-testid="nav-dashboard">{item.label}</a>
+              </Link>
+            ))}
           </div>
           
-          <Link href="/auth">
-            <button 
-              className="hidden md:inline-flex items-center px-6 py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-all hover:scale-105 shadow-lg"
-              data-testid="join-us-button"
-            >
-              Join Us
-            </button>
-          </Link>
+          {!user && (
+            <Link href="/auth">
+              <button 
+                className="hidden md:inline-flex items-center px-6 py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-all hover:scale-105 shadow-lg"
+                data-testid="join-us-button"
+              >
+                Join Us
+              </button>
+            </Link>
+          )}
           
           {/* Mobile Menu Button */}
           <button 
@@ -84,14 +94,21 @@ export default function Navigation() {
                 {item.label}
               </button>
             ))}
-            <Link href="/auth">
-              <button 
-                className="w-full mt-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold"
-                data-testid="mobile-join-us-button"
-              >
-                Join Us
-              </button>
-            </Link>
+            {extraItems.map((item) => (
+              <Link key={item.href} href={item.href}>
+                <a className="block w-full text-left text-foreground hover:text-primary transition-colors font-medium py-2" data-testid="mobile-nav-dashboard">{item.label}</a>
+              </Link>
+            ))}
+            {!user && (
+              <Link href="/auth">
+                <button 
+                  className="w-full mt-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold"
+                  data-testid="mobile-join-us-button"
+                >
+                  Join Us
+                </button>
+              </Link>
+            )}
           </div>
         </div>
       )}

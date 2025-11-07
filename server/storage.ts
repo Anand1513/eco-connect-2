@@ -21,7 +21,8 @@ import { Pool } from "pg";
 import { promisify } from "util";
 import { scrypt, randomBytes } from "crypto";
 
-const hasDatabase = Boolean(process.env.DATABASE_URL);
+const disableDatabase = String(process.env.DISABLE_DATABASE || "").toLowerCase() === "true";
+const hasDatabase = Boolean(process.env.DATABASE_URL) && !disableDatabase;
 
 // Only initialize DB clients if a DATABASE_URL exists
 // Supabase Postgres typically requires SSL; allow self-signed by default
@@ -33,6 +34,7 @@ export const db = hasDatabase ? drizzle(pool) : undefined as any;
 
 const PostgresSessionStore = connectPg(session);
 const MemStore = createMemoryStore(session);
+const useMemorySession = String(process.env.USE_MEMORY_SESSION || "").toLowerCase() === "true";
 
 export interface IStorage {
   sessionStore: session.Store;
@@ -42,6 +44,8 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   getUsersByRole?(role: string): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserProfile(id: string, fields: Partial<Pick<User, "username"|"role"|"organizationName"|"phoneNumber"|"address">>): Promise<User>;
+  linkSupabaseUserId(id: string, supabaseUserId: string): Promise<User>;
   createContactSubmission(contact: InsertContact): Promise<ContactSubmission>;
   
   createFoodListing(listing: InsertFoodListing): Promise<FoodListing>;
@@ -67,10 +71,14 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    this.sessionStore = new PostgresSessionStore({
-      pool: pool as any,
-      createTableIfMissing: true,
-    });
+    if (useMemorySession) {
+      this.sessionStore = new MemStore({ checkPeriod: 86400000 });
+    } else {
+      this.sessionStore = new PostgresSessionStore({
+        pool: pool as any,
+        createTableIfMissing: true,
+      });
+    }
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -93,6 +101,15 @@ export class DatabaseStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const result = await db.insert(users).values(insertUser).returning();
+    return result[0];
+  }
+  async updateUserProfile(id: string, fields: Partial<Pick<User, "username"|"role"|"organizationName"|"phoneNumber"|"address">>): Promise<User> {
+    const result = await db.update(users).set(fields).where(eq(users.id, id)).returning();
+    return result[0];
+  }
+
+  async linkSupabaseUserId(id: string, supabaseUserId: string): Promise<User> {
+    const result = await db.update(users).set({ supabaseUserId }).where(eq(users.id, id)).returning();
     return result[0];
   }
 
@@ -207,6 +224,7 @@ class MemoryStorage implements IStorage {
       username: "demo_restaurant",
       email: "restaurant@example.com",
       password: await this.hashPassword("password123"),
+      supabaseUserId: null,
       role: "restaurant",
       organizationName: "Green Bites",
       phoneNumber: "+1-555-1010",
@@ -218,6 +236,7 @@ class MemoryStorage implements IStorage {
       username: "demo_volunteer",
       email: "volunteer@example.com",
       password: await this.hashPassword("password123"),
+      supabaseUserId: null,
       role: "volunteer",
       organizationName: "Helping Hands",
       phoneNumber: "+1-555-2020",
@@ -229,6 +248,7 @@ class MemoryStorage implements IStorage {
       username: "demo_ngo",
       email: "ngo@example.com",
       password: await this.hashPassword("password123"),
+      supabaseUserId: null,
       role: "ngo",
       organizationName: "Food Bridge",
       phoneNumber: "+1-555-3030",
@@ -323,9 +343,26 @@ class MemoryStorage implements IStorage {
   async getUserByEmail(email: string): Promise<User | undefined> { return this.users.find(u => u.email === email); }
   async getUsersByRole(role: string): Promise<User[]> { return this.users.filter(u => u.role === role); }
   async createUser(insertUser: InsertUser): Promise<User> {
-    const user: User = { ...insertUser, id: this.uuid(), createdAt: new Date() } as User;
+    const user: User = { ...insertUser, id: this.uuid(), createdAt: new Date(), supabaseUserId: (insertUser as any).supabaseUserId ?? null } as User;
     this.users.push(user);
     return user;
+  }
+  async updateUserProfile(id: string, fields: Partial<Pick<User, "username"|"role"|"organizationName"|"phoneNumber"|"address">>): Promise<User> {
+    const idx = this.users.findIndex(u => u.id === id);
+    if (idx >= 0) {
+      this.users[idx] = { ...this.users[idx], ...fields } as User;
+      return this.users[idx];
+    }
+    throw new Error("User not found");
+  }
+
+  async linkSupabaseUserId(id: string, supabaseUserId: string): Promise<User> {
+    const idx = this.users.findIndex(u => u.id === id);
+    if (idx >= 0) {
+      this.users[idx] = { ...this.users[idx], supabaseUserId } as User;
+      return this.users[idx];
+    }
+    throw new Error("User not found");
   }
   async createContactSubmission(insertContact: InsertContact): Promise<ContactSubmission> {
     const c: ContactSubmission = { ...insertContact, id: this.uuid(), createdAt: new Date() } as ContactSubmission;

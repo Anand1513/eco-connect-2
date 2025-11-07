@@ -30,6 +30,7 @@ async function comparePasswords(supplied: string, stored: string) {
 
 export function setupAuth(app: Express) {
   const sessionSecret = process.env.SESSION_SECRET || "dev-session-secret-change-me";
+  const supabaseOnly = String(process.env.SUPABASE_ONLY_AUTH || "").toLowerCase() === "true";
   const sessionSettings: session.SessionOptions = {
     secret: sessionSecret,
     resave: false,
@@ -68,19 +69,27 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/register", async (req, res, next) => {
+    if (supabaseOnly) {
+      return res.status(403).send("Registration disabled: Supabase-only auth is enabled");
+    }
     try {
-      const existingUser = await storage.getUserByUsername(req.body.username);
+      const username = String(req.body.username || "").trim();
+      const email = String(req.body.email || "").trim();
+
+      const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
         return res.status(400).send("Username already exists");
       }
 
-      const existingEmail = await storage.getUserByEmail(req.body.email);
+      const existingEmail = await storage.getUserByEmail(email);
       if (existingEmail) {
         return res.status(400).send("Email already exists");
       }
 
       const user = await storage.createUser({
         ...req.body,
+        username,
+        email,
         password: await hashPassword(req.body.password),
       });
 
@@ -94,6 +103,9 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", passport.authenticate("local"), (req, res) => {
+    if (supabaseOnly) {
+      return res.status(403).send("Login disabled: Supabase-only auth is enabled");
+    }
     res.status(200).json(req.user);
   });
 
